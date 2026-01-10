@@ -23,8 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,11 +31,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.girlz.drone_app.ui.profile.ProfileViewModel
+import dev.girlz.drone_app.ui.profile.ProfileViewModelFactory
 import dev.girlz.drone_app.ui.theme.DroneappTheme
-import dev.girlz.drone_app.data.local.AppDatabase
-import dev.girlz.drone_app.data.local.DummyEntity
-import dev.girlz.drone_app.data.local.LocalDatabase
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,10 +75,7 @@ fun DroneappApp() {
             when (currentDestination) {
                 AppDestinations.HOME -> Greeting(name = "mia", modifier = modifier)
                 AppDestinations.FAVORITES -> Greeting(name = "favorites", modifier = modifier)
-                AppDestinations.PROFILE -> {
-                    val database = LocalDatabase.getInstance(LocalContext.current)
-                    ProfileScreen(database = database, modifier = modifier)
-                }
+                AppDestinations.PROFILE -> ProfileScreen(modifier = modifier)
             }
         }
     }
@@ -105,12 +99,14 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProfileScreen(database: AppDatabase, modifier: Modifier = Modifier) {
-    val dao = remember(database) { database.dummyDao() }
-    val dummyItems by dao.observeAll().collectAsState(initial = emptyList())
+fun ProfileScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val viewModel: ProfileViewModel = viewModel(
+        factory = ProfileViewModelFactory(context.applicationContext)
+    )
+    val dummyItems by viewModel.dummyItems.collectAsState()
     var name by rememberSaveable { mutableStateOf("") }
     var value by rememberSaveable { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
 
     Column(modifier = modifier) {
         Text(text = "Profile")
@@ -132,9 +128,7 @@ fun ProfileScreen(database: AppDatabase, modifier: Modifier = Modifier) {
                 val currentName = name.trim()
                 val currentValue = value.trim()
                 if (currentName.isNotBlank() && currentValue.isNotBlank()) {
-                    scope.launch {
-                        dao.insertDummy(DummyEntity(name = currentName, value = currentValue))
-                    }
+                    viewModel.insert(currentName, currentValue)
                     name = ""
                     value = ""
                 }
