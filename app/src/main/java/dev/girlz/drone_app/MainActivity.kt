@@ -8,22 +8,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RecordVoiceOver
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
@@ -31,24 +31,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.girlz.drone_app.data.local.LocalDatabase
+import dev.girlz.drone_app.data.local.SeedData
 import dev.girlz.drone_app.ui.noise.NoisePresetViewModel
 import dev.girlz.drone_app.ui.noise.NoisePresetViewModelFactory
 import dev.girlz.drone_app.ui.noise.NoiseScreen
 import dev.girlz.drone_app.ui.command.CommandScreen
 import dev.girlz.drone_app.ui.command.CommandViewModel
 import dev.girlz.drone_app.ui.command.CommandViewModelFactory
-import dev.girlz.drone_app.ui.profile.ProfileViewModel
-import dev.girlz.drone_app.ui.profile.ProfileViewModelFactory
 import dev.girlz.drone_app.ui.theme.DroneappTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +95,6 @@ fun DroneappApp() {
                 AppDestinations.NOISE -> NoiseScreen(modifier = modifier)
                 AppDestinations.COMMAND -> CommandScreen(modifier = modifier)
                 AppDestinations.SHOCK -> ShockScreen(modifier = modifier)
-                AppDestinations.TESTING -> TestingScreen(modifier = modifier)
             }
         }
     }
@@ -105,7 +108,6 @@ enum class AppDestinations(
     NOISE("Noise", Icons.Default.GraphicEq),
     COMMAND("Command", Icons.Default.RecordVoiceOver),
     SHOCK("Shock", Icons.Default.Warning),
-    TESTING("Testing", Icons.Default.Science),
 }
 
 @Composable
@@ -129,9 +131,26 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     val playingPresetId by noiseViewModel.playingPresetId.collectAsState()
     val commands by commandViewModel.commands.collectAsState()
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        Text(text = "Home")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = "Home")
+            Button(
+                onClick = {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val database = LocalDatabase.getInstance(context.applicationContext)
+                        SeedData.seed(database)
+                    }
+                }
+            ) {
+                Text(text = "Seed")
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         if (presets.isEmpty()) {
             Text(text = "No saved noise presets yet.")
@@ -172,52 +191,6 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-        }
-    }
-}
-
-@Composable
-fun TestingScreen(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val viewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModelFactory(context.applicationContext)
-    )
-    val dummyItems by viewModel.dummyItems.collectAsState()
-    var name by rememberSaveable { mutableStateOf("") }
-    var value by rememberSaveable { mutableStateOf("") }
-
-    Column(modifier = modifier) {
-        Text(text = "Testing")
-        Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Name") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = value,
-            onValueChange = { value = it },
-            label = { Text("Value") }
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
-            onClick = {
-                val currentName = name.trim()
-                val currentValue = value.trim()
-                if (currentName.isNotBlank() && currentValue.isNotBlank()) {
-                    viewModel.insert(currentName, currentValue)
-                    name = ""
-                    value = ""
-                }
-            }
-        ) {
-            Text(text = "Save dummy")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Saved entries")
-        dummyItems.forEach { item ->
-            Text(text = "${item.name}: ${item.value}")
         }
     }
 }

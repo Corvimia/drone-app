@@ -18,4 +18,8 @@ class CommandRepository(
     suspend fun deleteCommand(entity: CommandEntity) {
         dao.deleteCommand(entity)
     }
+
+    suspend fun deleteAll() {
+        dao.deleteAll()
+    }
 }

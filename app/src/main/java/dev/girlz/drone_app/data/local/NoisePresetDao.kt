@@ -18,6 +18,9 @@ interface NoisePresetDao {
     @Delete
     suspend fun deletePreset(entity: NoisePresetEntity)
 
+    @Query("DELETE FROM noise_presets")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM noise_presets ORDER BY id DESC")
     fun observeAll(): Flow<List<NoisePresetEntity>>
 }

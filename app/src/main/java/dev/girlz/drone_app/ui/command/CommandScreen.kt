@@ -35,12 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.Alignment
 
 @Composable
 fun CommandScreen(modifier: Modifier = Modifier) {
@@ -54,6 +54,7 @@ fun CommandScreen(modifier: Modifier = Modifier) {
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var editingCommandId by rememberSaveable { mutableStateOf<Long?>(null) }
     var commandPendingDelete by remember { mutableStateOf<Command?>(null) }
+    var deleteAllPending by remember { mutableStateOf(false) }
     var editorSessionCounter by rememberSaveable { mutableIntStateOf(0) }
 
     if (commandPendingDelete != null) {
@@ -73,6 +74,29 @@ fun CommandScreen(modifier: Modifier = Modifier) {
             },
             dismissButton = {
                 TextButton(onClick = { commandPendingDelete = null }) {
+                    Text(text = "Cancel")
+                }
+            },
+        )
+    }
+
+    if (deleteAllPending) {
+        AlertDialog(
+            onDismissRequest = { deleteAllPending = false },
+            title = { Text(text = "Delete all commands?") },
+            text = { Text(text = "This will remove every command permanently.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAllCommands()
+                        deleteAllPending = false
+                    }
+                ) {
+                    Text(text = "Delete all")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteAllPending = false }) {
                     Text(text = "Cancel")
                 }
             },
@@ -118,6 +142,9 @@ fun CommandScreen(modifier: Modifier = Modifier) {
                 editingCommandId = null
                 isEditing = true
             },
+            onDeleteAll = {
+                deleteAllPending = true
+            },
             onOpenTtsSettings = {
                 val intent = Intent("com.android.settings.TTS_SETTINGS").apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -148,6 +175,7 @@ private fun CommandListScreen(
     commands: List<Command>,
     engines: List<TtsEngine>,
     onCreateNew: () -> Unit,
+    onDeleteAll: () -> Unit,
     onOpenTtsSettings: () -> Unit,
     onRefreshEngines: () -> Unit,
     onEditCommand: (Command) -> Unit,
@@ -158,7 +186,16 @@ private fun CommandListScreen(
     val engineLabels = remember(engines) { engines.associateBy { it.name } }
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        Text(text = "Command", style = MaterialTheme.typography.headlineMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = "Command", style = MaterialTheme.typography.headlineMedium)
+            Button(onClick = onDeleteAll) {
+                Text(text = "Delete all")
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Saved commands",

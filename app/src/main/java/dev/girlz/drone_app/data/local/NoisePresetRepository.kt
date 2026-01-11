@@ -18,4 +18,8 @@ class NoisePresetRepository(
     suspend fun deletePreset(entity: NoisePresetEntity) {
         dao.deletePreset(entity)
     }
+
+    suspend fun deleteAll() {
+        dao.deleteAll()
+    }
 }

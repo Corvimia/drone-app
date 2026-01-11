@@ -37,4 +37,5 @@
 - When asked to "raise the pr", commit, push, and create a PR with a description generated from the changes.
 - When asked to "commit and raise pr", include all modified files in the commit.
 - When asked to "[remember]" something, add it to this file.
+- If we update the DB schema, update the seed script to make sure it still works.
 - Always number questions so they are easy to answer.
