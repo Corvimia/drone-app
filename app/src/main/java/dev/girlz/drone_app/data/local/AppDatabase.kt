@@ -4,11 +4,12 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [DummyEntity::class, NoisePresetEntity::class],
-    version = 2,
+    entities = [CommandEntity::class, DummyEntity::class, NoisePresetEntity::class],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun commandDao(): CommandDao
     abstract fun dummyDao(): DummyDao
     abstract fun noisePresetDao(): NoisePresetDao
 }

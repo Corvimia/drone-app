@@ -9,21 +9,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -34,26 +42,159 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun NoiseScreen(modifier: Modifier = Modifier) {
-    val engine = remember { NoiseEngine() }
     val context = LocalContext.current
     val presetViewModel: NoisePresetViewModel = viewModel(
         factory = NoisePresetViewModelFactory(context.applicationContext)
     )
-    var isPlaying by rememberSaveable { mutableStateOf(false) }
-    var gain by rememberSaveable { mutableStateOf(0.6f) }
-    var sampleRate by rememberSaveable { mutableStateOf(44100) }
-    var bufferSize by rememberSaveable { mutableStateOf(1024) }
-    var noiseColor by rememberSaveable { mutableStateOf(NoiseColor.WHITE) }
-    var fadeInSeconds by rememberSaveable { mutableStateOf(0.3f) }
-    var fadeOutSeconds by rememberSaveable { mutableStateOf(0.3f) }
-    var burstSeconds by rememberSaveable { mutableStateOf(5f) }
-    var burstIntervalSeconds by rememberSaveable { mutableStateOf(10f) }
-    var autoBurstEnabled by rememberSaveable { mutableStateOf(false) }
-    var presetName by rememberSaveable { mutableStateOf("") }
-    var burstJob by remember { mutableStateOf<Job?>(null) }
-    var restartJob by remember { mutableStateOf<Job?>(null) }
+    val presets by presetViewModel.presets.collectAsState()
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+    var editingPresetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var presetPendingDelete by remember { mutableStateOf<NoisePreset?>(null) }
+    var editorSessionCounter by rememberSaveable { mutableIntStateOf(0) }
+
+    if (presetPendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { presetPendingDelete = null },
+            title = { Text(text = "Delete preset?") },
+            text = { Text(text = "This will remove the preset permanently.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        presetPendingDelete?.let { presetViewModel.deletePreset(it) }
+                        presetPendingDelete = null
+                    }
+                ) {
+                    Text(text = "Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { presetPendingDelete = null }) {
+                    Text(text = "Cancel")
+                }
+            },
+        )
+    }
+
+    if (isEditing) {
+        val editingPreset = presets.firstOrNull { it.id == editingPresetId }
+        val resetKey = "${editingPreset?.id ?: "new"}-$editorSessionCounter"
+        NoisePresetEditorScreen(
+            modifier = modifier,
+            preset = editingPreset,
+            resetKey = resetKey,
+            onSave = { preset ->
+                if (editingPreset != null) {
+                    presetViewModel.updatePreset(preset.copy(id = editingPreset.id))
+                } else {
+                    presetViewModel.savePreset(preset)
+                }
+                isEditing = false
+                editingPresetId = null
+            },
+            onCancel = {
+                isEditing = false
+                editingPresetId = null
+            }
+        )
+    } else {
+        NoisePresetListScreen(
+            modifier = modifier,
+            presets = presets,
+            onCreateNew = {
+                editorSessionCounter += 1
+                editingPresetId = null
+                isEditing = true
+            },
+            onEditPreset = { preset ->
+                editorSessionCounter += 1
+                editingPresetId = preset.id
+                isEditing = true
+            },
+            onDeletePreset = { preset ->
+                presetPendingDelete = preset
+            }
+        )
+    }
+}
+
+@Composable
+private fun NoisePresetListScreen(
+    modifier: Modifier,
+    presets: List<NoisePreset>,
+    onCreateNew: () -> Unit,
+    onEditPreset: (NoisePreset) -> Unit,
+    onDeletePreset: (NoisePreset) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(modifier = modifier.verticalScroll(scrollState)) {
+        Text(text = "Noise", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Saved presets",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onCreateNew) {
+            Text(text = "Create new")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        if (presets.isEmpty()) {
+            Text(text = "No presets yet. Create one to get started.")
+        } else {
+            presets.forEach { preset ->
+                Column {
+                    Text(text = preset.name, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { onEditPreset(preset) }) {
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Edit")
+                        }
+                        TextButton(onClick = { onDeletePreset(preset) }) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Delete")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoisePresetEditorScreen(
+    modifier: Modifier,
+    preset: NoisePreset?,
+    resetKey: Any,
+    onSave: (NoisePreset) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val engine = remember { NoiseEngine() }
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    var isPlaying by rememberSaveable(resetKey) { mutableStateOf(false) }
+    var gain by rememberSaveable(resetKey) { mutableStateOf(preset?.gain ?: 0.6f) }
+    var sampleRate by rememberSaveable(resetKey) { mutableStateOf(preset?.sampleRate ?: 44100) }
+    var bufferSize by rememberSaveable(resetKey) { mutableStateOf(preset?.bufferSize ?: 1024) }
+    var noiseColor by rememberSaveable(resetKey) {
+        mutableStateOf(preset?.noiseColor ?: NoiseColor.WHITE)
+    }
+    var fadeInSeconds by rememberSaveable(resetKey) { mutableStateOf(preset?.fadeInSeconds ?: 0.3f) }
+    var fadeOutSeconds by rememberSaveable(resetKey) { mutableStateOf(preset?.fadeOutSeconds ?: 0.3f) }
+    var burstSeconds by rememberSaveable(resetKey) { mutableStateOf(preset?.burstSeconds ?: 5f) }
+    var burstIntervalSeconds by rememberSaveable(resetKey) {
+        mutableStateOf(preset?.burstIntervalSeconds ?: 10f)
+    }
+    var autoBurstEnabled by rememberSaveable(resetKey) {
+        mutableStateOf(preset?.autoBurstEnabled ?: false)
+    }
+    var presetName by rememberSaveable(resetKey) { mutableStateOf(preset?.name ?: "") }
+    var burstJob by remember { mutableStateOf<Job?>(null) }
+    var restartJob by remember { mutableStateOf<Job?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -142,23 +283,17 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
     }
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        Text(text = "Noise", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = if (preset == null) "New preset" else "Edit preset",
+            style = MaterialTheme.typography.headlineMedium
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Noise generator powered by TarsosDSP.",
+            text = "Tune and preview before saving.",
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Quick start")
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { startNoise(0.3f) }) { Text("Low") }
-            Button(onClick = { startNoise(0.6f) }) { Text("Medium") }
-            Button(onClick = { startNoise(0.9f) }) { Text("High") }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Playback")
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -326,7 +461,7 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Save preset", style = MaterialTheme.typography.titleMedium)
+        Text(text = "Preset info", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = presetName,
@@ -335,29 +470,33 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = {
-                val trimmedName = presetName.trim()
-                if (trimmedName.isNotEmpty()) {
-                    presetViewModel.savePreset(
-                        NoisePreset(
-                            name = trimmedName,
-                            gain = gain,
-                            sampleRate = sampleRate,
-                            bufferSize = bufferSize,
-                            noiseColor = noiseColor,
-                            fadeInSeconds = fadeInSeconds,
-                            fadeOutSeconds = fadeOutSeconds,
-                            burstSeconds = burstSeconds,
-                            burstIntervalSeconds = burstIntervalSeconds,
-                            autoBurstEnabled = autoBurstEnabled,
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    val trimmedName = presetName.trim()
+                    if (trimmedName.isNotEmpty()) {
+                        onSave(
+                            NoisePreset(
+                                name = trimmedName,
+                                gain = gain,
+                                sampleRate = sampleRate,
+                                bufferSize = bufferSize,
+                                noiseColor = noiseColor,
+                                fadeInSeconds = fadeInSeconds,
+                                fadeOutSeconds = fadeOutSeconds,
+                                burstSeconds = burstSeconds,
+                                burstIntervalSeconds = burstIntervalSeconds,
+                                autoBurstEnabled = autoBurstEnabled,
+                            )
                         )
-                    )
-                    presetName = ""
+                    }
                 }
+            ) {
+                Text(text = if (preset == null) "Save preset" else "Update preset")
             }
-        ) {
-            Text(text = "Save preset")
+            TextButton(onClick = onCancel) {
+                Text(text = "Back")
+            }
         }
     }
 }

@@ -35,6 +35,21 @@ class NoisePresetViewModel(
         }
     }
 
+    fun updatePreset(preset: NoisePreset) {
+        viewModelScope.launch {
+            repository.updatePreset(preset.toEntity())
+        }
+    }
+
+    fun deletePreset(preset: NoisePreset) {
+        viewModelScope.launch {
+            if (_playingPresetId.value == preset.id) {
+                stopPlayback()
+            }
+            repository.deletePreset(preset.toEntity())
+        }
+    }
+
     fun togglePreset(preset: NoisePreset) {
         if (_playingPresetId.value == preset.id) {
             stopPlayback()
