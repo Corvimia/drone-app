@@ -13,7 +13,10 @@ object LocalDatabase {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "drone-app.db"
-            ).build().also { instance = it }
+            )
+                .fallbackToDestructiveMigration()
+                .build()
+                .also { instance = it }
         }
     }
 }
