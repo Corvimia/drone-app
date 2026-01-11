@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.girlz.drone_app.ui.profile.ProfileViewModel
 import dev.girlz.drone_app.ui.profile.ProfileViewModelFactory
 import dev.girlz.drone_app.ui.theme.DroneappTheme
+import dev.girlz.drone_app.ui.noise.NoiseScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +78,7 @@ fun DroneappApp() {
                 AppDestinations.HOME -> Greeting(name = "mia", modifier = modifier)
                 AppDestinations.FAVORITES -> Greeting(name = "favorites", modifier = modifier)
                 AppDestinations.PROFILE -> ProfileScreen(modifier = modifier)
+                AppDestinations.NOISE -> NoiseScreen(modifier = modifier)
             }
         }
     }
@@ -88,6 +91,7 @@ enum class AppDestinations(
     HOME("Home", Icons.Default.Home),
     FAVORITES("Favorites", Icons.Default.Favorite),
     PROFILE("Profile", Icons.Default.AccountBox),
+    NOISE("Noise", Icons.Default.GraphicEq),
 }
 
 @Composable
