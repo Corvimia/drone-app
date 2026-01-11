@@ -18,6 +18,9 @@ interface CommandDao {
     @Delete
     suspend fun deleteCommand(entity: CommandEntity)
 
+    @Query("DELETE FROM commands")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM commands ORDER BY id DESC")
     fun observeAll(): Flow<List<CommandEntity>>
 }

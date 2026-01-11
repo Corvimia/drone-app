@@ -44,6 +44,12 @@ class CommandViewModel(
         }
     }
 
+    fun deleteAllCommands() {
+        viewModelScope.launch {
+            repository.deleteAll()
+        }
+    }
+
     fun playCommand(command: Command) {
         speaker.speak(
             text = command.text,

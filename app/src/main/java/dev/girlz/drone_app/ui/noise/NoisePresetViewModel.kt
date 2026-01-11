@@ -50,6 +50,13 @@ class NoisePresetViewModel(
         }
     }
 
+    fun deleteAllPresets() {
+        viewModelScope.launch {
+            stopPlayback()
+            repository.deleteAll()
+        }
+    }
+
     fun togglePreset(preset: NoisePreset) {
         if (_playingPresetId.value == preset.id) {
             stopPlayback()

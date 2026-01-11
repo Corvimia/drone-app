@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,6 +51,7 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var editingPresetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var presetPendingDelete by remember { mutableStateOf<NoisePreset?>(null) }
+    var deleteAllPending by remember { mutableStateOf(false) }
     var editorSessionCounter by rememberSaveable { mutableIntStateOf(0) }
 
     if (presetPendingDelete != null) {
@@ -69,6 +71,29 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
             },
             dismissButton = {
                 TextButton(onClick = { presetPendingDelete = null }) {
+                    Text(text = "Cancel")
+                }
+            },
+        )
+    }
+
+    if (deleteAllPending) {
+        AlertDialog(
+            onDismissRequest = { deleteAllPending = false },
+            title = { Text(text = "Delete all presets?") },
+            text = { Text(text = "This will remove every noise preset permanently.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        presetViewModel.deleteAllPresets()
+                        deleteAllPending = false
+                    }
+                ) {
+                    Text(text = "Delete all")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteAllPending = false }) {
                     Text(text = "Cancel")
                 }
             },
@@ -112,6 +137,9 @@ fun NoiseScreen(modifier: Modifier = Modifier) {
             },
             onDeletePreset = { preset ->
                 presetPendingDelete = preset
+            },
+            onDeleteAll = {
+                deleteAllPending = true
             }
         )
     }
@@ -124,11 +152,21 @@ private fun NoisePresetListScreen(
     onCreateNew: () -> Unit,
     onEditPreset: (NoisePreset) -> Unit,
     onDeletePreset: (NoisePreset) -> Unit,
+    onDeleteAll: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
-        Text(text = "Noise", style = MaterialTheme.typography.headlineMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = "Noise", style = MaterialTheme.typography.headlineMedium)
+            Button(onClick = onDeleteAll) {
+                Text(text = "Delete all")
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Saved presets",
