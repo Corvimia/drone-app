@@ -10,4 +10,12 @@ class NoisePresetRepository(
     suspend fun insertPreset(entity: NoisePresetEntity) {
         dao.insertPreset(entity)
     }
+
+    suspend fun updatePreset(entity: NoisePresetEntity) {
+        dao.updatePreset(entity)
+    }
+
+    suspend fun deletePreset(entity: NoisePresetEntity) {
+        dao.deletePreset(entity)
+    }
 }

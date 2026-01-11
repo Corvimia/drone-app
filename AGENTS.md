@@ -35,5 +35,6 @@
 - When asked to "go back to main", check out `main` and pull the latest from `origin`.
 - When asked to "start a new task", go back to `main`, ask for the task, create a Conventional Commit branch, then begin.
 - When asked to "raise the pr", commit, push, and create a PR with a description generated from the changes.
+- When asked to "commit and raise pr", include all modified files in the commit.
 - When asked to "[remember]" something, add it to this file.
 - Always number questions so they are easy to answer.

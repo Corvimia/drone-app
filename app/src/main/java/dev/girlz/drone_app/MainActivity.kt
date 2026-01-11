@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -42,6 +43,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.girlz.drone_app.ui.noise.NoisePresetViewModel
 import dev.girlz.drone_app.ui.noise.NoisePresetViewModelFactory
 import dev.girlz.drone_app.ui.noise.NoiseScreen
+import dev.girlz.drone_app.ui.command.CommandScreen
+import dev.girlz.drone_app.ui.command.CommandViewModel
+import dev.girlz.drone_app.ui.command.CommandViewModelFactory
 import dev.girlz.drone_app.ui.profile.ProfileViewModel
 import dev.girlz.drone_app.ui.profile.ProfileViewModelFactory
 import dev.girlz.drone_app.ui.theme.DroneappTheme
@@ -85,6 +89,7 @@ fun DroneappApp() {
             when (currentDestination) {
                 AppDestinations.HOME -> HomeScreen(modifier = modifier)
                 AppDestinations.NOISE -> NoiseScreen(modifier = modifier)
+                AppDestinations.COMMAND -> CommandScreen(modifier = modifier)
                 AppDestinations.SHOCK -> ShockScreen(modifier = modifier)
                 AppDestinations.TESTING -> TestingScreen(modifier = modifier)
             }
@@ -98,6 +103,7 @@ enum class AppDestinations(
 ) {
     HOME("Home", Icons.Default.Home),
     NOISE("Noise", Icons.Default.GraphicEq),
+    COMMAND("Command", Icons.Default.RecordVoiceOver),
     SHOCK("Shock", Icons.Default.Warning),
     TESTING("Testing", Icons.Default.Science),
 }
@@ -113,11 +119,15 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val viewModel: NoisePresetViewModel = viewModel(
+    val noiseViewModel: NoisePresetViewModel = viewModel(
         factory = NoisePresetViewModelFactory(context.applicationContext)
     )
-    val presets by viewModel.presets.collectAsState()
-    val playingPresetId by viewModel.playingPresetId.collectAsState()
+    val commandViewModel: CommandViewModel = viewModel(
+        factory = CommandViewModelFactory(context.applicationContext)
+    )
+    val presets by noiseViewModel.presets.collectAsState()
+    val playingPresetId by noiseViewModel.playingPresetId.collectAsState()
+    val commands by commandViewModel.commands.collectAsState()
     val scrollState = rememberScrollState()
 
     Column(modifier = modifier.verticalScroll(scrollState)) {
@@ -130,7 +140,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(8.dp))
             presets.forEach { preset ->
                 val isPlaying = preset.id == playingPresetId
-                Button(onClick = { viewModel.togglePreset(preset) }) {
+                Button(onClick = { noiseViewModel.togglePreset(preset) }) {
                     Row {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -138,6 +148,26 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = preset.name)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        if (commands.isEmpty()) {
+            Text(text = "No saved commands yet.")
+        } else {
+            Text(text = "Saved commands")
+            Spacer(modifier = Modifier.height(8.dp))
+            commands.forEach { command ->
+                Button(onClick = { commandViewModel.playCommand(command) }) {
+                    Row {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = command.text)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
