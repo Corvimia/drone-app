@@ -4,22 +4,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -39,12 +39,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.girlz.drone_app.ui.noise.NoisePresetViewModel
+import dev.girlz.drone_app.ui.noise.NoisePresetViewModelFactory
+import dev.girlz.drone_app.ui.noise.NoiseScreen
 import dev.girlz.drone_app.ui.profile.ProfileViewModel
 import dev.girlz.drone_app.ui.profile.ProfileViewModelFactory
 import dev.girlz.drone_app.ui.theme.DroneappTheme
-import dev.girlz.drone_app.ui.noise.NoiseScreen
-import dev.girlz.drone_app.ui.noise.NoisePresetViewModel
-import dev.girlz.drone_app.ui.noise.NoisePresetViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,9 +84,9 @@ fun DroneappApp() {
             val modifier = Modifier.padding(innerPadding).padding(16.dp)
             when (currentDestination) {
                 AppDestinations.HOME -> HomeScreen(modifier = modifier)
-                AppDestinations.FAVORITES -> Greeting(name = "favorites", modifier = modifier)
-                AppDestinations.PROFILE -> ProfileScreen(modifier = modifier)
                 AppDestinations.NOISE -> NoiseScreen(modifier = modifier)
+                AppDestinations.SHOCK -> ShockScreen(modifier = modifier)
+                AppDestinations.TESTING -> TestingScreen(modifier = modifier)
             }
         }
     }
@@ -97,9 +97,9 @@ enum class AppDestinations(
     val icon: ImageVector,
 ) {
     HOME("Home", Icons.Default.Home),
-    FAVORITES("Favorites", Icons.Default.Favorite),
-    PROFILE("Profile", Icons.Default.AccountBox),
     NOISE("Noise", Icons.Default.GraphicEq),
+    SHOCK("Shock", Icons.Default.Warning),
+    TESTING("Testing", Icons.Default.Science),
 }
 
 @Composable
@@ -147,7 +147,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
+fun TestingScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory(context.applicationContext)
@@ -157,7 +157,7 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
     var value by rememberSaveable { mutableStateOf("") }
 
     Column(modifier = modifier) {
-        Text(text = "Profile")
+        Text(text = "Testing")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = name,
@@ -190,6 +190,14 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
             Text(text = "${item.name}: ${item.value}")
         }
     }
+}
+
+@Composable
+fun ShockScreen(modifier: Modifier = Modifier) {
+    Text(
+        text = "Under construction",
+        modifier = modifier
+    )
 }
 
 @Preview(showBackground = true)
