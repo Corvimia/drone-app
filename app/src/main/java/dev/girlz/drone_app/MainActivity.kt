@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -76,9 +76,9 @@ fun DroneappApp() {
             val modifier = Modifier.padding(innerPadding).padding(16.dp)
             when (currentDestination) {
                 AppDestinations.HOME -> Greeting(name = "mia", modifier = modifier)
-                AppDestinations.FAVORITES -> Greeting(name = "favorites", modifier = modifier)
-                AppDestinations.PROFILE -> ProfileScreen(modifier = modifier)
                 AppDestinations.NOISE -> NoiseScreen(modifier = modifier)
+                AppDestinations.SHOCK -> ShockScreen(modifier = modifier)
+                AppDestinations.TESTING -> TestingScreen(modifier = modifier)
             }
         }
     }
@@ -89,9 +89,9 @@ enum class AppDestinations(
     val icon: ImageVector,
 ) {
     HOME("Home", Icons.Default.Home),
-    FAVORITES("Favorites", Icons.Default.Favorite),
-    PROFILE("Profile", Icons.Default.AccountBox),
     NOISE("Noise", Icons.Default.GraphicEq),
+    SHOCK("Shock", Icons.Default.Warning),
+    TESTING("Testing", Icons.Default.Science),
 }
 
 @Composable
@@ -103,7 +103,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
+fun TestingScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val viewModel: ProfileViewModel = viewModel(
         factory = ProfileViewModelFactory(context.applicationContext)
@@ -113,7 +113,7 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
     var value by rememberSaveable { mutableStateOf("") }
 
     Column(modifier = modifier) {
-        Text(text = "Profile")
+        Text(text = "Testing")
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = name,
@@ -146,6 +146,14 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
             Text(text = "${item.name}: ${item.value}")
         }
     }
+}
+
+@Composable
+fun ShockScreen(modifier: Modifier = Modifier) {
+    Text(
+        text = "Under construction",
+        modifier = modifier
+    )
 }
 
 @Preview(showBackground = true)
